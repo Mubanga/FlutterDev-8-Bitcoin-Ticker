@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'coin_data.dart';
+import 'package:flutter/cupertino.dart';
+import 'dart:io';
 
 class PriceScreen extends StatefulWidget {
   @override
@@ -45,15 +47,9 @@ class _PriceScreenState extends State<PriceScreen> {
             alignment: Alignment.center,
             padding: EdgeInsets.only(bottom: 30.0),
             color: Colors.lightBlue,
-            child: DropdownButton<String>(
-              value: _SelectedCurrency,
-              items: _DropDownItemBuilder(currenciesList.length),
-              onChanged: (value) {
-                setState(() {
-                  _SelectedCurrency = value;
-                });
-              },
-            ),
+            child: Platform.isAndroid
+                ? MaterialDropDownButton()
+                : CoupertinoScrollPicker(),
           ),
         ],
       ),
@@ -65,6 +61,7 @@ List<DropdownMenuItem<String>> _DropDownItemBuilder(int NumberOfItems) {
   if (NumberOfItems <= 0 || NumberOfItems >= currenciesList.length) {
     NumberOfItems = currenciesList.length;
   }
+
   List<DropdownMenuItem<String>> _Items = List<DropdownMenuItem<String>>();
   for (int x = 0; x < NumberOfItems; x++) {
     final CurrentItem = DropdownMenuItem<String>(
@@ -75,3 +72,57 @@ List<DropdownMenuItem<String>> _DropDownItemBuilder(int NumberOfItems) {
   }
   return _Items;
 }
+
+/// Material DropDownButton
+class MaterialDropDownButton extends StatefulWidget {
+  @override
+  _MaterialDropDownButtonState createState() => _MaterialDropDownButtonState();
+}
+
+class _MaterialDropDownButtonState extends State<MaterialDropDownButton> {
+  String _SelectedCurrency = "USD";
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButton<String>(
+        value: _SelectedCurrency,
+        items: _DropDownItemBuilder(currenciesList.length),
+        onChanged: (value) {
+          setState(() {
+            _SelectedCurrency = value;
+          });
+        });
+  }
+}
+
+/// Cupertino Style Picker
+class CoupertinoScrollPicker extends StatefulWidget {
+  @override
+  _CoupertinoScrollPickerState createState() => _CoupertinoScrollPickerState();
+}
+
+class _CoupertinoScrollPickerState extends State<CoupertinoScrollPicker> {
+  String _SelectedCurrency;
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoPicker(
+        looping: true,
+        backgroundColor: Colors.blue,
+        itemExtent: 32.0,
+        onSelectedItemChanged: (selectedItemIndex) {
+          print("Selected Currency Is ${currenciesList[selectedItemIndex]}");
+        },
+        children: [for (String currency in currenciesList) Text(currency)]);
+  }
+}
+
+//DropdownButton<String> _MaterialDropDownButton() {
+//  return DropdownButton < String > (
+//      value: _SelectedCurrency,
+//      items: _DropDownItemBuilder(currenciesList.length),
+//  onChanged: (value) {
+//  setState(() {
+//  _SelectedCurrency = value;
+//  });
+//  }
