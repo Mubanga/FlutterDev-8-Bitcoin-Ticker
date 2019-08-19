@@ -18,9 +18,7 @@ class PriceScreen extends StatefulWidget {
 
 class _PriceScreenState extends State<PriceScreen> {
   String selectedCurrency = 'USD';
-  // String currentPrice = "?";
-  List<String> _currentPrices = ["?", "?", "?"];
-  List<String> _updatedPrices = ["0", "0", "0"];
+  String currentPrice = "?";
   BitcoinApiService _bitCoinApiService;
   CoinData _coinData;
 
@@ -39,33 +37,21 @@ class _PriceScreenState extends State<PriceScreen> {
       items: dropdownItems,
       onChanged: (value) {
         String updatedPrice;
-        for (int x = 0; x < currenciesList.length; x++) {
-          _coinData.getCoinData(currenciesList[x], value).then((onValue) {
-            print("DropDownButton : Before Decoding Slider Currency = $value");
-            final decoderPrice =
-                json.decode(json.encode(onValue['last'])).toString();
-            print(
-                "DropDownButton : Before SetState $value Price = $decoderPrice");
-            _updatedPrices[x] = decoderPrice;
-          });
-        }
-//        _coinData.getCoinData("BTC", value).then((onValue) {
-//          print("DropDownButton : Before Decoding Slider Currency = $value");
+        _coinData.getCoinData("BTC", value).then((onValue) {
+          print("DropDownButton : Before Decoding Slider Currency = $value");
+          final decodedPrice = jsonDecode(onValue.body['last']).toString();
 //          final decodedPrice =
 //              json.decode(json.encode(onValue['last'])).toString();
-//          print(
-//              "DropDownButton : Before SetState $value Price = $decodedPrice");
-//          updatedPrice = decodedPrice;
-//        });
+          print(
+              "DropDownButton : Before SetState $value Price = $decodedPrice");
+          updatedPrice = decodedPrice;
+        });
         //  initialiseCurrentPrice(value);
         // _coinData.getCoinData("BTC", NormalCurrency)
         //  print("EEEEEE: $str");
         setState(() {
           selectedCurrency = value;
-          for (int x = 0; x < _currentPrices.length; x++) {
-            _currentPrices[x] = _updatedPrices[x];
-          }
-          //  currentPrice = updatedPrice;
+          currentPrice = updatedPrice;
         });
       },
     );
@@ -123,34 +109,26 @@ class _PriceScreenState extends State<PriceScreen> {
 //    _bitCoinApiService = Provider.of<BitcoinApiService>(context);
 //    _coinData = CoinData(_bitCoinApiService);
     return Scaffold(
-        appBar: AppBar(
-          title: Text('🤑 Coin Ticker'),
-        ),
-        body: _CardCollection(context) //_buildPriceScreenBody(context),
-        );
-  }
-
-  Column _CardCollection(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        for (int x = 0; x < 1; x++) _buildPriceScreenBody(context, x)
-      ],
+      appBar: AppBar(
+        title: Text('🤑 Coin Ticker'),
+      ),
+      body: _buildPriceScreenBody(context),
     );
   }
 
-  FutureBuilder _buildPriceScreenBody(BuildContext context, int index) {
+  FutureBuilder _buildPriceScreenBody(BuildContext context) {
     return FutureBuilder(
-        future: _coinData.getCoinData(cryptoList[index], selectedCurrency),
+        future: _coinData.getCoinData("BTC", selectedCurrency),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
+            //   Map jsonMap = jsonDecode(jsonEncode(snapshot.data));
             Map jsonMap = Map<String, dynamic>.from(snapshot.data);
             print(" API Map Values = ${jsonMap['last'].toString()} ");
             CryptoCurrency cryptoCurrency = CryptoCurrency.fromJSON(jsonMap);
-            //currentPrice = cryptoCurrency.currentPrice.toString();
-            _currentPrices[index] = cryptoCurrency.currentPrice.toString();
+            currentPrice = cryptoCurrency.currentPrice.toString();
             print(
-                "FutureBuilder: ${cryptoList[index]} $selectedCurrency Current Price Is = ${_currentPrices[index]}");
-            return _buildBitCoinBody(index);
+                "FutureBuilder: BTC $selectedCurrency Current Price Is = $currentPrice");
+            return _buildBitCoinBody();
           } else {
             return Center(
               child: CircularProgressIndicator(),
@@ -159,44 +137,49 @@ class _PriceScreenState extends State<PriceScreen> {
         });
   }
 
-  Column _buildBitCoinBody(int index) {
+  Column _buildBitCoinBody() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        //  for (int x = 0; x < 1; x++)
-        _bitCoinCardItem(
-            indexCrypto: index,
-            currentPrice: _currentPrices[index],
-            selectedCurrency: selectedCurrency),
+        Column(
+          children: <Widget>[
+            for (int x = 0; x < cryptoList.length; x++)
+              _buildSingleCard(
+                  currentPrice: currentPrice,
+                  selectedCurrency: selectedCurrency),
+          ],
+        ),
         Container(
           height: 150.0,
           alignment: Alignment.center,
-          padding: EdgeInsets.only(bottom: 30.0),
+          //  padding: EdgeInsets.only(bottom: 30.0),
           color: Colors.lightBlue,
           child: Platform.isIOS ? iOSPicker() : androidDropdown(),
         ),
       ],
     );
   }
+
+  Column _cardBuildListing() {
+    return Column();
+  }
 }
 
-class _bitCoinCardItem extends StatelessWidget {
-  const _bitCoinCardItem({
+class _buildSingleCard extends StatelessWidget {
+  const _buildSingleCard({
     Key key,
-    @required this.indexCrypto,
     @required this.currentPrice,
     @required this.selectedCurrency,
   }) : super(key: key);
 
-  final int indexCrypto;
   final String currentPrice;
   final String selectedCurrency;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
+      padding: EdgeInsets.fromLTRB(18.0, 4, 18.0, 0),
       child: Card(
         color: Colors.lightBlueAccent,
         elevation: 5.0,
@@ -207,7 +190,7 @@ class _bitCoinCardItem extends StatelessWidget {
           padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
           child: Text(
             //TODO: Update the Text Widget with the live bitcoin data here.
-            '1 ${currenciesList[indexCrypto]} = $currentPrice $selectedCurrency',
+            '1 BTC = $currentPrice $selectedCurrency',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 20.0,
