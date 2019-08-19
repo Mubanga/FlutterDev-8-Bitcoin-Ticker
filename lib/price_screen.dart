@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:bitcoin_ticker/model/cryptocurrency_model.dart';
 import 'package:chopper/chopper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -119,8 +120,10 @@ class _PriceScreenState extends State<PriceScreen> {
         future: _coinData.getCoinData("BTC", selectedCurrency),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            currentPrice =
-                json.decode(json.encode(snapshot.data['last'])).toString();
+            Map jsonMap = Map<String, dynamic>.from(snapshot.data);
+            print(" API Map Values = ${jsonMap['last'].toString()} ");
+            CryptoCurrency cryptoCurrency = CryptoCurrency.fromJSON(jsonMap);
+            currentPrice = cryptoCurrency.currentPrice.toString();
             print(
                 "FutureBuilder: BTC $selectedCurrency Current Price Is = $currentPrice");
             return _buildBitCoinBody();
